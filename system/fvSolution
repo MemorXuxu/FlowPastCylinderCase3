@@ -1,0 +1,123 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1806                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+
+    p
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-05;
+        relTol          0.05;
+        //minIter         3;
+        //maxIter         100;
+    }
+
+/*    
+    p
+    {
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0.0;
+        smoother            GaussSeidel;
+        nPreSweeps          0;
+        nPostSweeps         2;
+        cacheAgglomeration  on;
+        agglomerator        faceAreaPair;
+        nCellsInCoarsestLevel        1000;
+        mergeLevels                     1;
+    }
+*/    
+
+    "(p|pcorr)Final"
+    {
+        $p;
+        tolerance       1e-06;
+        relTol          0;
+    }
+
+    "(k|U|epsilon|omega)"
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-8;
+        relTol          0;
+    }
+
+    "(k|U|epsilon|omega)Final"
+    {
+        $U;
+        tolerance       1e-08;
+        relTol          0;
+    }
+
+	pAco
+   {
+        solver		    PBiCGStab;
+        preconditioner	DIC;
+        tolerance 	    1e-6;
+        relTol		    0;
+   }
+   
+   nuTilda
+   {
+       solver          PBiCG;
+       preconditioner  DILU;
+       tolerance       1e-08;
+       relTol          0;
+   }
+
+   Phi
+   {
+       solver          GAMG;
+       smoother        DIC;
+       tolerance       1e-06;
+       relTol          0;
+   }
+}
+
+// - Transient Control
+    PIMPLE
+    {
+        // momentumPredictor   yes;   // high Reynolds - default yes
+        nOuterCorrectors 1;
+        nCorrectors      3;
+        nNonOrthogonalCorrectors 1;
+    }
+
+    PISO
+    {
+        nCorrectors     2;
+        nNonOrthogonalCorrectors 1;
+    }
+
+// - Steady Contorl
+    SIMPLE
+    {
+        nNonOrthogonalCorrectors 1;
+        consistent      yes;
+    }
+    
+    relaxationFactors
+    {
+        nuTilda         0.9;
+        "(k|U|epsilon|omega)" 0.9;
+        p               1.0;
+    }
+
+// ************************************************************************* //
